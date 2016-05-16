@@ -19,7 +19,8 @@ import os
 import re
 import xml.etree.ElementTree as ET
 from lxml import etree
-from bottle import route, run, request, debug
+from bottle import route, run, request, debug, hook
+from bottle import response as resp
 
 
 @route('/', method='GET')
@@ -206,6 +207,17 @@ def display_uptime(flag=None):
         }
     }
     return json.dumps(response, sort_keys=True, indent=2)
+
+
+@hook('after_request')
+def enable_cors():
+    '''
+    Method to enable cross origin resource sharing headers
+    for all requests.
+    '''
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    resp.headers['Access-Control-Allow-Methods'] = '*'
+    resp.headers['Access-Control-Allow-Headers'] = '*'
 
 debug(True)
 run(host='0.0.0.0', port=8081, reloader=True)
