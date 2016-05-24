@@ -1,5 +1,7 @@
 ## Description
 
+https://travis-ci.org/rahulunair/vulnerable-api.svg?branch=master
+
 This repository contains an example Python API that is vulnerable to several different web API attacks.
 
 ## Installation
