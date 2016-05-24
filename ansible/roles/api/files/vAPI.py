@@ -29,12 +29,13 @@ def get_root():
     Give default message for a GET on root directory.
     '''
     response = {'response':
-        {
-            'Application': 'vulnerable-api',
-            'Status': 'running'
-        }
-    }
+                {
+                    'Application': 'vulnerable-api',
+                    'Status': 'running'
+                }
+                }
     return json.dumps(response, sort_keys=True, indent=2)
+
 
 @route('/tokens', method='POST')
 def get_token():
@@ -70,50 +71,62 @@ def get_token():
     if user:
         response['access'] = {}
         response['access']['user'] = {'id': user[0], 'name': user[1]}
-        # make sure to get most recent token in database, because we arent removing them...
+        # make sure to get most recent token in database, because we arent
+        # removing them...
         token_query = "SELECT * FROM tokens WHERE userid = '%s' ORDER BY expires DESC" % (user[0])
         c.execute(token_query)
         token_record = c.fetchone()
         if type(token_record) == tuple:
             if token_record[3] < int(time.time()):
-                # token has expired. create new one that expires 5 minutes after creation
-                expire_stamp = int(time.time()+300)
+                # token has expired. create new one that expires 5 minutes
+                # after creation
+                expire_stamp = int(time.time() + 300)
                 expire_date = time.ctime(int(expire_stamp))
                 token = hashlib.md5(expire_date).hexdigest()
-                # we'll parameterize this one because we need this serious functionality
-                c.execute('INSERT INTO tokens (token, userid, expires) VALUES (?, ?, ?)', (token, user[0], expire_stamp))
+                # we'll parameterize this one because we need this serious
+                # functionality
+                c.execute("INSERT INTO tokens (token, userid, expires)"
+                          " VALUES (?, ?, ?)", (token, user[0], expire_stamp))
                 conn.commit()
-                response['access']['token'] = {'id': token, 'expires': expire_date}
+                response['access']['token'] = {
+                    'id': token, 'expires': expire_date}
             else:
                 # recent token hasn't expired. use same one.
                 expire_date = time.ctime(int(token_record[3]))
-                response['access']['token'] = {'id': token_record[1], 'expires': expire_date}
+                response['access']['token'] = {
+                    'id': token_record[1], 'expires': expire_date}
         else:
             # no token exists. create one that expires in 5 minutes
-            expire_stamp = int(time.time()+300)
+            expire_stamp = int(time.time() + 300)
             expire_date = time.ctime(int(expire_stamp))
             token = hashlib.md5(expire_date).hexdigest()
-            # we'll parameterize this one because we need this serious functionality
-            c.execute('INSERT INTO tokens (token, userid, expires) VALUES (?, ?, ?)', (token, user[0], expire_stamp))
+            # we'll parameterize this one because we need this serious
+            # functionality
+            c.execute("INSERT INTO tokens (token, userid, expires)"
+                      " VALUES (?, ?, ?)", (token, user[0], expire_stamp))
             conn.commit()
             response['access']['token'] = {'id': token, 'expires': expire_date}
     else:
-        # let's do another look up so we can return helpful info for failure cases
+        # let's do another look up so we can return helpful info for failure
+        # cases
         c.execute("SELECT * FROM users WHERE username = '%s'" % username)
         user = c.fetchone()
         if user:
             response['error'] = {'message': 'password does not match'}
         else:
-            response['error'] = {'message': 'username ' + username + ' not found'}
+            response['error'] = {
+                'message': 'username ' + username + ' not found'}
     conn.close()
 
     return {json.dumps(response)}
+
 
 @route('/tokens', method='GET')
 def get_get_token():
     '''
     this is an undocumented request. EASTER EGG
-    /tokens is only supposed to accept a POST! Are you checking the other verbs?
+    tokens is only supposed to accept a POST!
+    Are you checking the other verbs?
     '''
     conn = sqlite3.connect('vAPI.db')
     c = conn.cursor()
@@ -121,6 +134,7 @@ def get_get_token():
     c.execute(query)
     users = c.fetchall()
     return {'response': users}
+
 
 @route('/user/<user:re:.*>', method='GET')
 def get_user(user):
@@ -148,21 +162,25 @@ def get_user(user):
                 response['user']['name'] = user_record[1]
                 response['user']['password'] = user_record[2]
             else:
-                response['error'] = {'message': 'the token and user do not match!'}
+                response['error'] = {
+                    'message': 'the token and user do not match!'}
         else:
             response['error'] = {'message': 'user id ' + user + ' not found'}
     else:
-        response['error'] = {'message': 'token id ' + str(token) + ' not found'}
+        response['error'] = {
+            'message': 'token id ' + str(token) + ' not found'}
     conn.close()
 
     return {'response': response}
+
 
 @route('/user', method='POST')
 def create_user():
     token = request.headers.get('X-Auth-Token')
     conn = sqlite3.connect('vAPI.db')
     c = conn.cursor()
-    token_query = "SELECT * FROM tokens WHERE token = '%s' AND userid = 10" % (str(token))
+    token_query = "SELECT * FROM tokens WHERE token = '%s' AND userid = 10" % (
+        str(token))
     c.execute(token_query)
     token_record = c.fetchone()
     response = {}
@@ -178,13 +196,17 @@ def create_user():
             c.execute(user_query)
             user_record = c.fetchone()
             if type(user_record) == tuple:
-                response['error'] = {"message": "User %s already exists!" % name}
+                response['error'] = {
+                    "message": "User %s already exists!" % name}
             else:
-                c.execute("INSERT INTO users (username, password) VALUES (?, ?)",  (name, password))
+                c.execute(
+                    "INSERT INTO users (username, password)"
+                    " VALUES (?, ?)",  (name, password))
                 conn.commit()
                 response['user'] = {"username": name, "password": password}
         else:
-            response['error'] = {"message": "username invalid format, check documentation!"}
+            response['error'] = {
+                "message": "username invalid format, check documentation!"}
     else:
         response['error'] = {"message": "must provide valid admin token"}
 
@@ -201,11 +223,11 @@ def display_uptime(flag=None):
         command = "uptime"
     output = os.popen(command).read()
     response = {'response':
-        {
-            'Command': command,
-            'Output': output
-        }
-    }
+                {
+                    'Command': command,
+                    'Output': output
+                }
+                }
     return json.dumps(response, sort_keys=True, indent=2)
 
 
