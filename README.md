@@ -1,6 +1,5 @@
 ## Description
 
-
 This repository contains an example Python API that is vulnerable to several different web API attacks.
 
 ## Installation
