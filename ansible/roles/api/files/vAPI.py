@@ -19,7 +19,7 @@ import os
 import re
 import xml.etree.ElementTree as ET
 from lxml import etree
-from bottle import route, run, request, debug, hook
+from bottle import HTTPError, route, run, request, debug, hook, error
 from bottle import response as resp
 
 
@@ -185,12 +185,18 @@ def create_user():
     token_record = c.fetchone()
     response = {}
     if type(token_record) == tuple:
-        data = request.json
+        try:
+            data = request.json
+        except Exception, ex:
+            raise HTTPError(traceback=ex, status=500)
         name = data['user']['username']
         password = data['user']['password']
         # catastrophically bad regex
         match = "([a-z]+)*[0-9]"
-        m = re.search(match, name)
+        try:
+            m = re.search(match, name)
+        except Exception, ex:
+            raise HTTPError(traceback=ex, status=500)
         if m:
             user_query = "SELECT * FROM users WHERE username = '%s'" % (name)
             c.execute(user_query)
@@ -240,6 +246,14 @@ def enable_cors():
     resp.headers['Access-Control-Allow-Origin'] = '*'
     resp.headers['Access-Control-Allow-Methods'] = '*'
     resp.headers['Access-Control-Allow-Headers'] = '*'
+
+
+@error(500)
+@error(404)
+@error(403)
+def handle_error(error_object):
+    return "{}, Status code: {}".format(
+        error_object.traceback, error_object.status)
 
 debug(True)
 run(host='0.0.0.0', port=8081, reloader=True)
